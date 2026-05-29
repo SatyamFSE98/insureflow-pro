@@ -42,7 +42,7 @@ public class User {
     private UserRole role;
 
     @Column(nullable = false)
-    private Boolean active;
+    private boolean active;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

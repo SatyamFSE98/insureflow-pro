@@ -1,6 +1,7 @@
 package com.insureflow.user_service.exception;
 
 
+import com.insureflow.user_service.dto.response.ApiResponse;
 import com.insureflow.user_service.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -113,6 +114,17 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiResponse<Object>>  handleInvalidCredentialsException(InvalidCredentialsException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .data(null)
+                .message(ex.getMessage())
+                .success(false)
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
 

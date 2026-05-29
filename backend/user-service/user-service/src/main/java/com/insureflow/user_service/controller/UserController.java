@@ -2,6 +2,8 @@ package com.insureflow.user_service.controller;
 
 
 import com.insureflow.user_service.constant.AppConstants;
+import com.insureflow.user_service.dto.request.LoginRequestDto;
+import com.insureflow.user_service.dto.request.LoginResponseDto;
 import com.insureflow.user_service.dto.request.RegisterUserRequest;
 import com.insureflow.user_service.dto.response.ApiResponse;
 import com.insureflow.user_service.dto.response.UserResponse;
@@ -37,6 +39,20 @@ public class UserController {
                .build();
 
        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public  ResponseEntity<ApiResponse<LoginResponseDto>> loginUser(@Valid @RequestBody LoginRequestDto loginRequestDto){
+       LoginResponseDto loginResponseDto = userService.loginUser(loginRequestDto);
+
+       ApiResponse<LoginResponseDto> response = ApiResponse.<LoginResponseDto>builder().
+                                                 data(loginResponseDto)
+               .message("login successful")
+               .success(true)
+               .timestamp(LocalDateTime.now())
+               .build();
+
+       return ResponseEntity.ok(response);
     }
 
 }

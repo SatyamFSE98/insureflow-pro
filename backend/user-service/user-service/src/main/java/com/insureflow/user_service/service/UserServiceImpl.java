@@ -1,9 +1,12 @@
 package com.insureflow.user_service.service;
 
 import com.insureflow.user_service.constant.AppConstants;
+import com.insureflow.user_service.dto.request.LoginRequestDto;
+import com.insureflow.user_service.dto.request.LoginResponseDto;
 import com.insureflow.user_service.dto.request.RegisterUserRequest;
 import com.insureflow.user_service.dto.response.UserResponse;
 import com.insureflow.user_service.entity.User;
+import com.insureflow.user_service.exception.InvalidCredentialsException;
 import com.insureflow.user_service.exception.ResourceAlreadyExistsException;
 import com.insureflow.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,32 @@ public class UserServiceImpl implements UserService{
 
     }
 
+    @Override
+    public LoginResponseDto loginUser(LoginRequestDto loginRequestDto) {
+         User user = userRepository.findByEmail(loginRequestDto.getEmail())
+                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+
+         boolean passwordMatches = passwordEncoder.matches(loginRequestDto.getPassword(),user.getPassword());
+
+         if(!passwordMatches){
+             throw new InvalidCredentialsException("Invalid email or Password");
+         }
+         if(!user.isActive()){
+             throw new InvalidCredentialsException("User account is inactive");
+         }
+        return mapToLoginResponse(user);
+    }
+
+    private LoginResponseDto mapToLoginResponse(User user) {
+        return  LoginResponseDto.builder()
+                .userId(user.getUserId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .active(user.isActive())
+                .build();
+    }
+
     private UserResponse mapToUserResponse(User user) {
 
         return UserResponse.builder()
@@ -58,7 +87,7 @@ public class UserServiceImpl implements UserService{
                 .email(user.getEmail())
                 .mobileNumber(user.getMobileNumber())
                 .role(user.getRole())
-                .active(user.getActive())
+                .active(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
