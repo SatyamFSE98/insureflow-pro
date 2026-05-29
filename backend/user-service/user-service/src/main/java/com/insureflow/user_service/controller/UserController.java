@@ -5,6 +5,7 @@ import com.insureflow.user_service.constant.AppConstants;
 import com.insureflow.user_service.dto.request.LoginRequestDto;
 import com.insureflow.user_service.dto.request.LoginResponseDto;
 import com.insureflow.user_service.dto.request.RegisterUserRequest;
+import com.insureflow.user_service.dto.request.UpdateUserRequest;
 import com.insureflow.user_service.dto.response.ApiResponse;
 import com.insureflow.user_service.dto.response.PageResponse;
 import com.insureflow.user_service.dto.response.UserResponse;
@@ -87,6 +88,32 @@ public class UserController {
 
     }
 
+     @PutMapping("/{userId}")
+     public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable Long userId, @Valid @RequestBody UpdateUserRequest updateUserRequest){
+        UserResponse userResponse = userService.updateUser(userId,updateUserRequest);
 
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                .data(userResponse)
+                .success(true)
+                .message("user updated succesfully")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.ok(response);
+     }
+
+     @PatchMapping("/{userId}/deactivate")
+     public ResponseEntity<ApiResponse<UserResponse>> deactivateUser(@PathVariable Long userId){
+         UserResponse deactivateUser = userService.deactivateUser(userId);
+
+         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                 .data(deactivateUser)
+                 .message("User deactivated successful")
+                 .success(true)
+                 .timestamp(LocalDateTime.now())
+                 .build();
+
+         return ResponseEntity.ok(response);
+     }
 
 }
