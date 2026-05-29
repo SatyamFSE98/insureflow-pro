@@ -83,6 +83,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace();
         ErrorResponse response = ErrorResponse.builder()
                 .success(false)
                 .message("Something went wrong. Please try again later.")
@@ -127,6 +128,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUserNotFoundException(UserNotFoundException ex){
 
+        ApiResponse<Object> response = ApiResponse.builder()
+                .data(null).message(ex.getMessage())
+                .success(false)
+                .timestamp(LocalDateTime.now())
+                .build();
+        return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
 
 }
