@@ -52,4 +52,17 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+    @ExceptionHandler(PolicyNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePolicyNotFoundException(
+            PolicyNotFoundException ex) {
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .data(null)
+                .message(ex.getMessage())
+                .success(false)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
 }

@@ -1,15 +1,23 @@
 package com.insureflow.policy_service.service;
 
 import com.insureflow.policy_service.dto.request.CreatePolicyRequest;
+import com.insureflow.policy_service.dto.response.PageResponse;
 import com.insureflow.policy_service.dto.response.PolicyResponse;
 import com.insureflow.policy_service.entity.Policy;
 import com.insureflow.policy_service.entity.enums.PolicyStatus;
+import com.insureflow.policy_service.exception.PolicyNotFoundException;
 import com.insureflow.policy_service.repository.PolicyRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PolicyServiceImpl implements PolicyService{
@@ -43,6 +51,71 @@ public class PolicyServiceImpl implements PolicyService{
 
         Policy savedPolicy = policyRepository.save(policy);
         return mapToPolicyResponse(savedPolicy);
+    }
+
+    @Override
+    public PolicyResponse getPolicyById(Long policyId) {
+       Policy policy = policyRepository.findById(policyId)
+               .orElseThrow(() -> new PolicyNotFoundException(
+                       "Policy not found with id: " + policyId
+               ));
+       return mapToPolicyResponse(policy);
+    }
+
+    @Override
+    public PageResponse<PolicyResponse> getAllPolicies(int pageNo, int pageSize, String sortBy, String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(pageNo,pageSize,sort);
+
+        Page<Policy> policyPage = policyRepository.findAll(pageable);
+
+        List<PolicyResponse> policies = policyPage.getContent()
+                .stream().map(this::mapToPolicyResponse).collect(Collectors.toList());
+
+        return buildPageResponse(policyPage,policies);
+
+        /*
+        List<PolicyResponse> policies = new ArrayList<>();
+
+         for (Policy policy : policyPage.getContent()) {
+           PolicyResponse response = mapToPolicyResponse(policy);
+           policies.add(response);
+         }
+         */
+    }
+
+    @Override
+    public PageResponse<PolicyResponse> getPoliciesByUserId(Long userId, int pageNo, int pageSize, String sortBy, String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ?Sort.by(sortBy).descending()
+                :Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(pageNo,pageSize,sort);
+
+        Page<Policy> policyPage = policyRepository.findByUserId(userId,pageable);
+
+        List<PolicyResponse> policies = policyPage.getContent().stream()
+                .map(this::mapToPolicyResponse).collect(Collectors.toList());
+
+        return buildPageResponse(policyPage,policies);
+    }
+    private PageResponse<PolicyResponse> buildPageResponse(
+            Page<Policy> policyPage,
+            List<PolicyResponse> policies) {
+
+        return PageResponse.<PolicyResponse>builder()
+                .content(policies)
+                .pageNo(policyPage.getNumber())
+                .pageSize(policyPage.getSize())
+                .totalElements(policyPage.getTotalElements())
+                .totalPages(policyPage.getTotalPages())
+                .last(policyPage.isLast())
+                .build();
     }
 
     private PolicyResponse mapToPolicyResponse(Policy policy) {
