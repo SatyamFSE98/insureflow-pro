@@ -64,7 +64,7 @@ public class PolicyServiceImpl implements PolicyService{
 
     private UserResponse validateUser(Long userId) {
 
-        try {
+
             ApiResponse<UserResponse> userApiResponse =
                     userServiceClient.getUserBYId(userId);
 
@@ -83,12 +83,7 @@ public class PolicyServiceImpl implements PolicyService{
 
             return userResponse;
 
-        } catch (UserServiceException ex) {
-            throw ex;
 
-        } catch (Exception ex) {
-            throw new UserServiceException("Unable to connect with user service");
-        }
     }
 
     @Override
