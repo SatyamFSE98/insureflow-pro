@@ -65,4 +65,18 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
+
+    @ExceptionHandler(UserServiceException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUserServiceException(
+            UserServiceException ex) {
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .data(null)
+                .message(ex.getMessage())
+                .success(false)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }

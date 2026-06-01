@@ -1,12 +1,17 @@
 package com.insureflow.policy_service.service;
 
+import com.insureflow.policy_service.client.UserServiceClient;
 import com.insureflow.policy_service.dto.request.CreatePolicyRequest;
+import com.insureflow.policy_service.dto.response.ApiResponse;
 import com.insureflow.policy_service.dto.response.PageResponse;
 import com.insureflow.policy_service.dto.response.PolicyResponse;
+import com.insureflow.policy_service.dto.response.UserResponse;
 import com.insureflow.policy_service.entity.Policy;
 import com.insureflow.policy_service.entity.enums.PolicyStatus;
 import com.insureflow.policy_service.exception.PolicyNotFoundException;
+import com.insureflow.policy_service.exception.UserServiceException;
 import com.insureflow.policy_service.repository.PolicyRepository;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,13 +29,17 @@ public class PolicyServiceImpl implements PolicyService{
 
     private final PolicyRepository policyRepository;
 
-    public PolicyServiceImpl(PolicyRepository policyRepository) {
+    private final UserServiceClient userServiceClient;
+
+    public PolicyServiceImpl(PolicyRepository policyRepository, UserServiceClient userServiceClient) {
         this.policyRepository = policyRepository;
+        this.userServiceClient = userServiceClient;
     }
 
 
     @Override
     public PolicyResponse createPolicy(CreatePolicyRequest request) {
+        UserResponse userResponse = validateUser(request.getUserId());
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusYears(request.getDurationInYears());
 
@@ -51,6 +60,35 @@ public class PolicyServiceImpl implements PolicyService{
 
         Policy savedPolicy = policyRepository.save(policy);
         return mapToPolicyResponse(savedPolicy);
+    }
+
+    private UserResponse validateUser(Long userId) {
+
+        try {
+            ApiResponse<UserResponse> userApiResponse =
+                    userServiceClient.getUserBYId(userId);
+
+            if (userApiResponse == null
+                    || !userApiResponse.isSuccess()
+                    || userApiResponse.getData() == null) {
+
+                throw new UserServiceException("User not found with id: " + userId);
+            }
+
+            UserResponse userResponse = userApiResponse.getData();
+
+            if (!userResponse.isActive()) {
+                throw new UserServiceException("Cannot create policy for inactive user");
+            }
+
+            return userResponse;
+
+        } catch (UserServiceException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+            throw new UserServiceException("Unable to connect with user service");
+        }
     }
 
     @Override
