@@ -12,6 +12,8 @@ import com.insureflow.policy_service.exception.PolicyNotFoundException;
 import com.insureflow.policy_service.exception.UserServiceException;
 import com.insureflow.policy_service.repository.PolicyRepository;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +29,14 @@ import java.util.stream.Collectors;
 @Service
 public class PolicyServiceImpl implements PolicyService{
 
+    private final CircuitBreakerFactory circuitBreakerFactory;
+
     private final PolicyRepository policyRepository;
 
     private final UserServiceClient userServiceClient;
 
-    public PolicyServiceImpl(PolicyRepository policyRepository, UserServiceClient userServiceClient) {
+    public PolicyServiceImpl(CircuitBreakerFactory circuitBreakerFactory, PolicyRepository policyRepository, UserServiceClient userServiceClient) {
+        this.circuitBreakerFactory = circuitBreakerFactory;
         this.policyRepository = policyRepository;
         this.userServiceClient = userServiceClient;
     }
@@ -62,28 +67,60 @@ public class PolicyServiceImpl implements PolicyService{
         return mapToPolicyResponse(savedPolicy);
     }
 
-    private UserResponse validateUser(Long userId) {
+//    private UserResponse validateUser(Long userId) {
+//
+//
+//            ApiResponse<UserResponse> userApiResponse =
+//                    userServiceClient.getUserBYId(userId);
+//
+//            if (userApiResponse == null
+//                    || !userApiResponse.isSuccess()
+//                    || userApiResponse.getData() == null) {
+//
+//                throw new UserServiceException("User not found with id: " + userId);
+//            }
+//
+//            UserResponse userResponse = userApiResponse.getData();
+//
+//            if (!userResponse.isActive()) {
+//                throw new UserServiceException("Cannot create policy for inactive user");
+//            }
+//
+//            return userResponse;
+//
+//
+//    }
+    private  UserResponse validateUser(Long userId){
+        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("userServiceCircuitBreaker");
+        return circuitBreaker.run(
+                ()->callUserService(userId),
+                throwable -> userServiceFallback(userId, throwable)
+        );
+    }
+
+    public UserResponse callUserService(Long userId){
+
+        ApiResponse<UserResponse> userApiResponse = userServiceClient.getUserBYId(userId);
+
+        if (userApiResponse == null
+                || !userApiResponse.isSuccess()
+                || userApiResponse.getData() == null) {
+
+            throw new UserServiceException("User not found with id: " + userId);
+        }
+        UserResponse userResponse = userApiResponse.getData();
+
+        if (!userResponse.isActive()) {
+            throw new UserServiceException("Cannot create policy for inactive user");
+        }
+        return  userResponse;
+    }
 
 
-            ApiResponse<UserResponse> userApiResponse =
-                    userServiceClient.getUserBYId(userId);
-
-            if (userApiResponse == null
-                    || !userApiResponse.isSuccess()
-                    || userApiResponse.getData() == null) {
-
-                throw new UserServiceException("User not found with id: " + userId);
-            }
-
-            UserResponse userResponse = userApiResponse.getData();
-
-            if (!userResponse.isActive()) {
-                throw new UserServiceException("Cannot create policy for inactive user");
-            }
-
-            return userResponse;
-
-
+    private  UserResponse userServiceFallback(Long userId,Throwable throwable){
+        throw new UserServiceException(
+                "User service is currently unavailable. Please try again later."
+        );
     }
 
     @Override
