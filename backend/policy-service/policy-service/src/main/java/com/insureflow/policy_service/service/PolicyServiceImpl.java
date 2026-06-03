@@ -93,10 +93,47 @@ public class PolicyServiceImpl implements PolicyService{
     private  UserResponse validateUser(Long userId){
         CircuitBreaker circuitBreaker = circuitBreakerFactory.create("userServiceCircuitBreaker");
         return circuitBreaker.run(
-                ()->callUserService(userId),
+                ()->callUserServiceWithRetry(userId),
                 throwable -> userServiceFallback(userId, throwable)
         );
     }
+
+    private UserResponse callUserServiceWithRetry(Long userId) {
+        int maxAttempts = 2;
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+
+            try {
+                System.out.println("Calling user-service. Attempt: " + attempt);
+
+                return callUserService(userId);
+            } catch (UserServiceException ex) {
+                lastException = ex;
+                if (attempt == maxAttempts) {
+                    throw ex;
+                }
+            } catch (Exception ex) {
+                lastException = ex;
+
+                if (attempt == maxAttempts) {
+                    throw new UserServiceException(
+                            "User service is currently unavailable. Please try again later."
+                    );
+                }
+            }
+        }
+
+            throw new UserServiceException(
+                    lastException != null
+                            ? lastException.getMessage()
+                            : "Unable to validate user"
+            );
+
+
+
+    }
+
 
     public UserResponse callUserService(Long userId){
 
