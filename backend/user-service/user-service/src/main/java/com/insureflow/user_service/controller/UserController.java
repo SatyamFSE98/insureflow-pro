@@ -3,7 +3,7 @@ package com.insureflow.user_service.controller;
 
 import com.insureflow.user_service.constant.AppConstants;
 import com.insureflow.user_service.dto.request.LoginRequestDto;
-import com.insureflow.user_service.dto.request.LoginResponseDto;
+import com.insureflow.user_service.dto.response.LoginResponseDto;
 import com.insureflow.user_service.dto.request.RegisterUserRequest;
 import com.insureflow.user_service.dto.request.UpdateUserRequest;
 import com.insureflow.user_service.dto.response.ApiResponse;

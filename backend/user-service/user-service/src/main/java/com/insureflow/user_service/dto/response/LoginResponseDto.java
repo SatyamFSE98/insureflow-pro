@@ -1,4 +1,4 @@
-package com.insureflow.user_service.dto.request;
+package com.insureflow.user_service.dto.response;
 
 
 import lombok.Builder;
@@ -12,5 +12,8 @@ public class LoginResponseDto {
     private String email;
     private String role;
     private boolean active;
+    private String token;
+    private String tokenType;
+
 }
 

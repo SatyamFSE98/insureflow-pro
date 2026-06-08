@@ -2,7 +2,7 @@ package com.insureflow.user_service.service;
 
 import com.insureflow.user_service.constant.AppConstants;
 import com.insureflow.user_service.dto.request.LoginRequestDto;
-import com.insureflow.user_service.dto.request.LoginResponseDto;
+import com.insureflow.user_service.dto.response.LoginResponseDto;
 import com.insureflow.user_service.dto.request.RegisterUserRequest;
 import com.insureflow.user_service.dto.request.UpdateUserRequest;
 import com.insureflow.user_service.dto.response.PageResponse;
@@ -12,6 +12,7 @@ import com.insureflow.user_service.exception.InvalidCredentialsException;
 import com.insureflow.user_service.exception.ResourceAlreadyExistsException;
 import com.insureflow.user_service.exception.UserNotFoundException;
 import com.insureflow.user_service.repository.UserRepository;
+import com.insureflow.user_service.security.JwtService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,10 +29,12 @@ public class UserServiceImpl implements UserService{
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
 
@@ -74,7 +77,9 @@ public class UserServiceImpl implements UserService{
          if(!user.isActive()){
              throw new InvalidCredentialsException("User account is inactive");
          }
-        return mapToLoginResponse(user);
+         String token = jwtService.generateTokenUser(user);
+
+         return mapToLoginResponse(user,token);
     }
 
     @Override
@@ -141,13 +146,14 @@ public class UserServiceImpl implements UserService{
         return mapToUserResponse(updatedUser);
     }
 
-    private LoginResponseDto mapToLoginResponse(User user) {
+    private LoginResponseDto mapToLoginResponse(User user, String token) {
         return  LoginResponseDto.builder()
                 .userId(user.getUserId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .active(user.isActive())
+                .token(token).tokenType("Bearer")
                 .build();
     }
 
