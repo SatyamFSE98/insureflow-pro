@@ -39,7 +39,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // For policy-service user validation flow
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*").permitAll()
+                       // .requestMatchers(HttpMethod.GET, "/api/v1/users/*").permitAll()
 
                         // Everything else requires token
                         .anyRequest().authenticated()
